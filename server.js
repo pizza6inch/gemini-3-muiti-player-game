@@ -25,11 +25,17 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
-    // Initialize player with a default position
-    players[socket.id] = { id: socket.id, position: [0, 1, 0] };
+    // Initialize player with a default position in the center (50%)
+    players[socket.id] = { id: socket.id, position: { x: 50, y: 50 } };
     
     // Send existing players to the newly connected player
+    console.log(`Sending current players to ${socket.id}:`, JSON.stringify(players));
     socket.emit("currentPlayers", players);
+    
+    // Explicit request handler
+    socket.on("requestCurrentPlayers", () => {
+      socket.emit("currentPlayers", players);
+    });
     
     // Broadcast the new player to everyone else
     socket.broadcast.emit("newPlayer", players[socket.id]);

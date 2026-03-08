@@ -1,13 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const Scene = dynamic(() => import("@/components/Scene"), { ssr: false });
+import GameWorld from "@/components/GameWorld";
 
 export default function Home() {
   return (
     <main className="w-full h-full">
-      <Scene />
+      <GameWorld />
     </main>
   );
 }
