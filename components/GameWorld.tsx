@@ -5,6 +5,7 @@ import { socket } from "@/lib/socket";
 import ChatOverlay from "./ChatOverlay";
 import LocalPlayer from "./LocalPlayer";
 import RemotePlayers from "./RemotePlayers";
+import Apples from "./Apples";
 
 // Static background decorative objects for flavor
 // x, y are percentages of the screen (0 to 100)
@@ -38,6 +39,7 @@ export default function GameWorld() {
       ))}
 
       {/* Players */}
+      <Apples />
       <RemotePlayers />
       <LocalPlayer />
 

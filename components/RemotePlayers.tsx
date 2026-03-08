@@ -12,12 +12,10 @@ export default function RemotePlayers() {
     setMounted(true);
 
     function onCurrentPlayers(serverPlayers: any) {
-      console.log("RemotePlayers: Received current players", serverPlayers);
       setAllPlayers(serverPlayers);
     }
 
     function onNewPlayer(player: any) {
-      console.log("RemotePlayers: New player joined", player.id);
       setAllPlayers((prev) => ({ ...prev, [player.id]: player }));
     }
 
@@ -31,8 +29,17 @@ export default function RemotePlayers() {
       });
     }
 
+    function onAppleEaten({ playerId, newScore }: any) {
+        setAllPlayers((prev) => {
+            if (!prev[playerId]) return prev;
+            return {
+                ...prev,
+                [playerId]: { ...prev[playerId], score: newScore }
+            }
+        });
+    }
+
     function onPlayerDisconnected(id: string) {
-      console.log("RemotePlayers: Player disconnected", id);
       setAllPlayers((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -43,6 +50,7 @@ export default function RemotePlayers() {
     socket.on("currentPlayers", onCurrentPlayers);
     socket.on("newPlayer", onNewPlayer);
     socket.on("playerMoved", onPlayerMoved);
+    socket.on("appleEaten", onAppleEaten);
     socket.on("playerDisconnected", onPlayerDisconnected);
 
     const checkInterval = setInterval(() => {
@@ -56,6 +64,7 @@ export default function RemotePlayers() {
       socket.off("currentPlayers", onCurrentPlayers);
       socket.off("newPlayer", onNewPlayer);
       socket.off("playerMoved", onPlayerMoved);
+      socket.off("appleEaten", onAppleEaten);
       socket.off("playerDisconnected", onPlayerDisconnected);
       clearInterval(checkInterval);
     };
@@ -73,7 +82,7 @@ export default function RemotePlayers() {
 
   return (
     <>
-      {Object.values(remotePlayers).map((player) => {
+      {Object.values(remotePlayers).map((player: any) => {
         const px = player.position?.x ?? 50;
         const py = player.position?.y ?? 50;
         
@@ -83,6 +92,11 @@ export default function RemotePlayers() {
             className="absolute w-10 h-10 bg-red-500 rounded-full border-4 border-white shadow-xl flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-100"
             style={{ left: `${px}%`, top: `${py}%` }}
           >
+             {/* Score Display */}
+             <div className="absolute -top-8 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md">
+                Score: {player.score || 0}
+             </div>
+
              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs shadow-inner">
                😎
              </div>

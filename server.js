@@ -21,31 +21,57 @@ app.prepare().then(() => {
 
   // Track all connected players
   const players = {};
+  // Track apples on the map
+  let apples = {};
+
+  // Periodically spawn apples
+  const spawnApple = () => {
+    const id = Math.random().toString(36).substring(7);
+    const apple = {
+      id,
+      x: Math.random() * 90 + 5, 
+      y: Math.random() * 90 + 5,
+    };
+    apples[id] = apple;
+    io.emit("newApple", apple);
+  };
+
+  setInterval(() => {
+    if (Object.keys(apples).length < 15) {
+      spawnApple();
+    }
+  }, 3000);
 
   io.on("connection", (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
-    // Initialize player with a default position in the center (50%)
-    players[socket.id] = { id: socket.id, position: { x: 50, y: 50 } };
+    // Initialize player with score
+    players[socket.id] = { id: socket.id, position: { x: 50, y: 50 }, score: 0 };
     
-    // Send existing players to the newly connected player
-    console.log(`Sending current players to ${socket.id}:`, JSON.stringify(players));
+    // Send existing data
     socket.emit("currentPlayers", players);
+    socket.emit("currentApples", apples);
     
-    // Explicit request handler
-    socket.on("requestCurrentPlayers", () => {
-      socket.emit("currentPlayers", players);
-    });
-    
-    // Broadcast the new player to everyone else
     socket.broadcast.emit("newPlayer", players[socket.id]);
 
     socket.on("move", (position) => {
       if (players[socket.id]) {
         players[socket.id].position = position;
-        // Broadcast to other players
         socket.broadcast.emit("playerMoved", { id: socket.id, position });
       }
+    });
+
+    socket.on("eatApple", (appleId) => {
+      if (apples[appleId] && players[socket.id]) {
+        delete apples[appleId];
+        players[socket.id].score += 10;
+        io.emit("appleEaten", { appleId, playerId: socket.id, newScore: players[socket.id].score });
+      }
+    });
+
+    socket.on("requestCurrentPlayers", () => {
+      socket.emit("currentPlayers", players);
+      socket.emit("currentApples", apples); // Also send apples on manual sync
     });
 
     socket.on("chat", (message) => {
